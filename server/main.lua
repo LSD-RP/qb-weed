@@ -40,7 +40,7 @@ CreateThread(function()
         for k, v in pairs(housePlants) do
             if housePlants[k].food >= 50 then
                 exports.oxmysql:execute('UPDATE house_plants SET food = ? WHERE plantid = ?',
-                    {(housePlants[k].food - 1), housePlants[k].plantid})
+                    {(housePlants[k].food - 3), housePlants[k].plantid})
                 if housePlants[k].health + 1 < 100 then
                     exports.oxmysql:execute('UPDATE house_plants SET health = ? WHERE plantid = ?',
                         {(housePlants[k].health + 1), housePlants[k].plantid})
@@ -68,7 +68,7 @@ CreateThread(function()
         local housePlants = exports.oxmysql:executeSync('SELECT * FROM house_plants', {})
         for k, v in pairs(housePlants) do
             if housePlants[k].health > 50 then
-                local Grow = math.random(1, 3)
+                local Grow = math.random(10,30)
                 if housePlants[k].progress + Grow < 100 then
                     exports.oxmysql:execute('UPDATE house_plants SET progress = ? WHERE plantid = ?',
                         {(housePlants[k].progress + Grow), housePlants[k].plantid})
@@ -100,7 +100,7 @@ CreateThread(function()
             end
         end
         TriggerClientEvent('qb-weed:client:refreshPlantStats', -1)
-        Wait((60 * 1000) * 9.6)
+        Wait(60 * 1000 * 5)
     end
 end)
 
@@ -149,17 +149,21 @@ RegisterNetEvent('qb-weed:server:harvestPlant', function(house, amount, plantNam
     local src = source
     local Player = QBCore.Functions.GetPlayer(src)
     local weedBag = Player.Functions.GetItemByName('empty_weed_bag')
-    local sndAmount = math.random(12, 16)
-
+    local sndAmount = math.random(20,45)
+    local seedCount = math.random(1,3)
     if weedBag ~= nil then
         if weedBag.amount >= sndAmount then
             if house ~= nil then
                 local result = exports.oxmysql:executeSync(
                     'SELECT * FROM house_plants WHERE plantid = ? AND building = ?', {plantId, house})
                 if result[1] ~= nil then
-                    Player.Functions.AddItem('weed_' .. plantName .. '_seed', amount)
-                    Player.Functions.AddItem('weed_' .. plantName, sndAmount)
-                    Player.Functions.RemoveItem('empty_weed_bag', sndAmount)
+                    -- print(result[1].gender)
+                    if result[1].gender == 'man' then
+                        Player.Functions.AddItem('weed_' .. plantName .. '_seed', seedCount)
+                    else
+                        Player.Functions.AddItem('weed_' .. plantName, sndAmount)
+                        Player.Functions.RemoveItem('empty_weed_bag', sndAmount)
+                    end
                     exports.oxmysql:execute('DELETE FROM house_plants WHERE plantid = ? AND building = ?',
                         {plantId, house})
                     TriggerClientEvent('QBCore:Notify', src, 'The plant has been harvested', 'success', 3500)
